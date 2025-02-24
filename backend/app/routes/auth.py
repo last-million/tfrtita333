@@ -34,11 +34,23 @@ def create_access_token(data: dict, expires_delta: int = ACCESS_TOKEN_EXPIRE_MIN
 
 @router.post("/token", response_model=TokenResponse)
 async def login_for_access_token(request_data: LoginRequest):
-    user = await get_user_from_db(request_data.username)
-    if not user or not verify_password(request_data.password, user["hashed_password"]):
+    query = "SELECT id, username, password_hash FROM users WHERE username = %s"
+    result = await db.execute(query, (request_data.username,))
+    
+    if not result or len(result) == 0:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password"
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    user = result[0]
+    if not verify_password(request_data.password, user['password_hash']):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
     access_token = create_access_token({"sub": user["username"]})
     return {"access_token": access_token, "token_type": "bearer"}
