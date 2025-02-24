@@ -84,10 +84,80 @@ EOF
 sudo iptables-restore < /etc/iptables/rules.v4
 
 # -----------------------------------------------------------
-# II. MYSQL SETUP REMINDER
+# II. MYSQL SETUP AND VALIDATION
 # -----------------------------------------------------------
-log "NOTE: MySQL must be secured and your DB/user must exist BEFORE this script."
-log "E.g.: sudo mysql_secure_installation + create database voice_call_ai + create user, etc."
+log "Setting up and validating MySQL..."
+
+# Function to check MySQL connection
+check_mysql_connection() {
+    if mysql -u"$1" -p"$2" -e "SELECT 1;" >/dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Function to check if database exists
+check_database_exists() {
+    if mysql -u"$1" -p"$2" -e "USE $3;" >/dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Ensure MySQL service is running
+log "Ensuring MySQL service is running..."
+sudo systemctl start mysql || { log "Failed to start MySQL service"; exit 1; }
+
+# Test root connection first
+log "Testing MySQL root connection..."
+if ! check_mysql_connection "root" "AFINasahbi@-11"; then
+    log "ERROR: Cannot connect to MySQL as root. Please check root password."
+    exit 1
+fi
+
+# Create database and user if they don't exist
+log "Setting up database and user..."
+mysql -uroot -p"AFINasahbi@-11" <<EOF
+CREATE DATABASE IF NOT EXISTS voice_call_ai CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS 'hamza'@'localhost' IDENTIFIED BY 'AFINasahbi@-11';
+GRANT ALL PRIVILEGES ON voice_call_ai.* TO 'hamza'@'localhost';
+FLUSH PRIVILEGES;
+EOF
+
+# Verify database exists
+log "Verifying database existence..."
+if ! check_database_exists "hamza" "AFINasahbi@-11" "voice_call_ai"; then
+    log "ERROR: Database 'voice_call_ai' not accessible with configured credentials"
+    exit 1
+fi
+
+log "MySQL setup and validation completed successfully"
+
+# Create necessary tables
+log "Creating database tables..."
+mysql -u"hamza" -p"AFINasahbi@-11" voice_call_ai <<'EOF'
+CREATE TABLE IF NOT EXISTS users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(255) UNIQUE,
+    password_hash VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS calls (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    call_sid VARCHAR(255),
+    from_number VARCHAR(50),
+    to_number VARCHAR(50),
+    direction VARCHAR(20),
+    duration INT,
+    status VARCHAR(50),
+    start_time DATETIME,
+    end_time DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+EOF
 
 # -----------------------------------------------------------
 # III. PYTHON VENV & BACKEND PREP
