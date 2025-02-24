@@ -1,0 +1,28 @@
+:root {
+  --primary-color: #0077ff;
+  --secondary-color: #00ffaa;
+  --background-dark: #0a0a1a;
+  --background-light: #121229;
+  --text-color: #e0e0ff;
+  --accent-color: #ff6b6b;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--background-dark);
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--background-dark) 0%, var(--background-light) 100%);
+}

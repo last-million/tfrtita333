@@ -1,0 +1,33 @@
+# Existing requirements
+fastapi==0.100.0
+uvicorn==0.23.1
+python-multipart==0.0.6
+
+# Google and OAuth
+google-auth-oauthlib==1.0.0
+google-auth-httplib2==0.1.0
+google-api-python-client==2.95.0
+
+# Database
+supabase==1.0.3
+mysql-connector-python
+
+# Vectorization
+sentence-transformers==2.2.2
+python-magic==0.4.27
+PyPDF2==3.0.1
+python-docx==0.8.11
+openpyxl==3.1.2
+pandas==2.0.2
+
+# Twilio (added to resolve missing module error)
+twilio
+
+# Pydantic Settings (this will install Pydantic v2.x)
+pydantic-settings
+
+# LibSQL
+libsql_client==0.3.1
+
+
+prometheus_client==0.15.0
