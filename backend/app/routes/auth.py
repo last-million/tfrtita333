@@ -3,7 +3,6 @@ from pydantic import BaseModel
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
-import logging
 
 from ..config import settings
 from ..database import db  # Assumes db.connection is available
@@ -17,9 +16,6 @@ ALGORITHM = settings.jwt_algorithm
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# Configure logging
-logger = logging.getLogger(__name__)
 
 class LoginRequest(BaseModel):
     username: str
@@ -39,20 +35,10 @@ def create_access_token(data: dict, expires_delta: int = ACCESS_TOKEN_EXPIRE_MIN
 @router.post("/token", response_model=TokenResponse)
 async def login_for_access_token(request_data: LoginRequest):
     user = await get_user_from_db(request_data.username)
-    if not user:
-        logger.warning(f"Login attempt failed: User not found - {request_data.username}")
+    if not user or not verify_password(request_data.password, user["password_hash"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password"
         )
-
-    if not verify_password(request_data.password, user["password_hash"]):
-        logger.warning(f"Login attempt failed: Invalid password for user - {request_data.username}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password"
-        )
-
     access_token = create_access_token({"sub": user["username"]})
-    logger.info(f"User {request_data.username} logged in successfully")
     return {"access_token": access_token, "token_type": "bearer"}
