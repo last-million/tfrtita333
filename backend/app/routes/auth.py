@@ -35,7 +35,7 @@ def create_access_token(data: dict, expires_delta: int = ACCESS_TOKEN_EXPIRE_MIN
 @router.post("/token", response_model=TokenResponse)
 async def login_for_access_token(request_data: LoginRequest):
     user = await get_user_from_db(request_data.username)
-    if not user or not verify_password(request_data.password, user["password_hash"]):
+    if not user or not verify_password(request_data.password, user["hashed_password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password"
