@@ -287,7 +287,7 @@ NGINX_CONF="/etc/nginx/sites-available/${DOMAIN}"
 # Create Nginx configuration
 sudo tee ${NGINX_CONF} > /dev/null <<EOF
 # HTTP to HTTPS redirect
-map \$http_upgrade \$connection_upgrade {
+map $http_upgrade $connection_upgrade {
     default upgrade;
     '' close;
 }
@@ -305,7 +305,7 @@ server {
 
     # Redirect all HTTP traffic to HTTPS
     location / {
-        return 301 https://\$host\$request_uri;
+        return 301 https://$host$request_uri;
     }
 }
 
@@ -335,7 +335,7 @@ server {
     # Frontend static files
     location / {
         root ${WEB_ROOT};
-        try_files \$uri \$uri/ /index.html;
+        try_files $uri $uri/ /index.html;
         add_header Cache-Control "no-cache, no-store, must-revalidate";
         expires 0;
     }
@@ -344,12 +344,12 @@ server {
     location /api/ {
         proxy_pass http://127.0.0.1:8080/;
         proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header X-Forwarded-Host \$host;
-        proxy_set_header X-Forwarded-Port \$server_port;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
         
         # Timeouts
         proxy_connect_timeout 60s;
@@ -361,12 +361,12 @@ server {
     location /ws {
         proxy_pass http://127.0.0.1:8080/ws;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection \$connection_upgrade;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
         
         # WebSocket specific settings
         proxy_read_timeout 86400s;
@@ -383,46 +383,4 @@ server {
 }
 EOF
 
-if [ ! -f "/etc/ssl/certs/dhparam.pem" ]; then
-    log "Generating DH parameters..."
-    sudo openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
-fi
-
-log "Enabling Nginx configuration..."
-sudo ln -sf ${NGINX_CONF} /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t && sudo systemctl reload nginx
-check_error "Nginx configuration failed"
-
-# -----------------------------------------------------------
-# VIII. SSL CERTIFICATE
-# -----------------------------------------------------------
-log "Obtaining SSL certificate..."
-sudo certbot --nginx -d ${DOMAIN} -d www.${DOMAIN} --non-interactive --agree-tos --email ${EMAIL} --redirect
-check_error "SSL certificate acquisition failed"
-
-# -----------------------------------------------------------
-# IX. FINAL VERIFICATION
-# -----------------------------------------------------------
-log "Restarting services..."
-sudo systemctl restart mysql
-sudo systemctl restart tfrtita333
-sudo systemctl restart nginx
-
-log "Verifying services..."
-services=("mysql" "nginx" "tfrtita333")
-for service in "${services[@]}"; do
-    if ! sudo systemctl is-active --quiet "$service"; then
-        log "WARNING: $service is not running!"
-    else
-        log "$service is running OK."
-    fi
-done
-
-log "Deployment complete!"
-log "Site: https://${DOMAIN}"
-log "Default admin credentials: username=${MYSQL_USER}, password=${MYSQL_PASSWORD}"
-log "Check logs if needed:"
-log "  Backend:  sudo journalctl -u tfrtita333 -f"
-log "  Nginx:    sudo tail -f /var/log/nginx/error.log"
-log "  MySQL:    sudo tail -f /var/log/mysql/error.log"
+if [ ! -f "/
