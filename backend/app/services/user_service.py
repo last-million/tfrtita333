@@ -4,7 +4,7 @@ from ..database import db
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def get_user_from_db(username: str) -> dict:
-    query = "SELECT username, password_hash FROM users WHERE username = %s"
+    query = "SELECT username, hashed_password FROM users WHERE username = %s"
     result = db.execute(query, (username,))
     return result[0] if result else None
 
