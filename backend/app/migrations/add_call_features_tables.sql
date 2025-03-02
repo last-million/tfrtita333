@@ -1,6 +1,9 @@
 -- Migration script to add new tables for call actions and analysis
 -- Created: 2025-03-02
 
+-- First, ensure call_sid is properly indexed in calls table
+CREATE INDEX IF NOT EXISTS idx_calls_call_sid ON calls (call_sid);
+
 -- Create call_actions table to store actions performed during calls (search, weather, calendar, email)
 CREATE TABLE IF NOT EXISTS call_actions (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -13,9 +16,7 @@ CREATE TABLE IF NOT EXISTS call_actions (
 );
 
 -- Create index for faster lookup by call_sid
-DROP INDEX IF EXISTS idx_call_actions_call_sid ON call_actions;
 CREATE INDEX idx_call_actions_call_sid ON call_actions (call_sid);
-DROP INDEX IF EXISTS idx_call_actions_action_type ON call_actions;
 CREATE INDEX idx_call_actions_action_type ON call_actions (action_type);
 
 -- Create call_analysis table to store call analysis results
