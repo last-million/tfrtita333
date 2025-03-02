@@ -13,8 +13,10 @@ CREATE TABLE IF NOT EXISTS call_actions (
 );
 
 -- Create index for faster lookup by call_sid
-CREATE INDEX IF NOT EXISTS idx_call_actions_call_sid ON call_actions (call_sid);
-CREATE INDEX IF NOT EXISTS idx_call_actions_action_type ON call_actions (action_type);
+DROP INDEX IF EXISTS idx_call_actions_call_sid ON call_actions;
+CREATE INDEX idx_call_actions_call_sid ON call_actions (call_sid);
+DROP INDEX IF EXISTS idx_call_actions_action_type ON call_actions;
+CREATE INDEX idx_call_actions_action_type ON call_actions (action_type);
 
 -- Create call_analysis table to store call analysis results
 CREATE TABLE IF NOT EXISTS call_analysis (
