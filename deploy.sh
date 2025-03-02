@@ -163,15 +163,36 @@ EOF
 iptables-restore < /etc/iptables/rules.v4
 check_error "Failed to apply iptables rules"
 
-# Make iptables rules persistent across reboots
+# Make iptables rules persistent across reboots but with strict timeout
 log "Making iptables rules persistent..."
-{
-  # Install with auto-accept for all prompts
-  DEBIAN_FRONTEND=noninteractive apt install -y iptables-persistent
-  # Save rules with timeout to prevent hanging
-  timeout 15 netfilter-persistent save || log "WARNING: netfilter-persistent save timed out, continuing"
-  timeout 15 netfilter-persistent reload || log "WARNING: netfilter-persistent reload timed out, continuing"
-} || log "WARNING: Could not make iptables rules persistent, continuing anyway"
+
+# Save rules manually without using iptables-persistent
+log "Saving iptables rules manually..."
+mkdir -p /etc/iptables
+iptables-save > /etc/iptables/rules.v4
+
+# Create systemd service to load rules at boot
+log "Creating systemd service for iptables..."
+cat > /etc/systemd/system/iptables-restore.service << 'EOF'
+[Unit]
+Description=Restore iptables firewall rules
+Before=network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/iptables-restore /etc/iptables/rules.v4
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable the service
+systemctl daemon-reload
+systemctl enable iptables-restore.service
+
+log "Firewall rules will be loaded at boot automatically"
 
 # -----------------------------------------------------------
 # V. MYSQL SETUP
