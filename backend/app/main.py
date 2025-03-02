@@ -89,6 +89,30 @@ async def api_root():
         "version": "1.0.0"
     }
 
+@app.get("/api/test-routes")
+async def test_routes():
+    """Test endpoint to show all available routes"""
+    routes = []
+    for route in app.routes:
+        routes.append({
+            "path": route.path,
+            "name": route.name,
+            "methods": list(route.methods) if hasattr(route, "methods") else []
+        })
+    return {"routes": routes}
+
+@app.post("/api/auth/token-simple")
+async def login_test(request_data: dict):
+    """Simple login test that doesn't require database access"""
+    if request_data.get("username") == "hamza" and request_data.get("password") == "AFINasahbi@-11":
+        return {
+            "access_token": "test_token_for_debugging",
+            "token_type": "bearer",
+            "username": "hamza",
+            "is_admin": True
+        }
+    return {"error": "Invalid credentials"}
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
