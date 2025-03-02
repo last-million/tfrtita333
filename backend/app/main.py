@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from .config import settings
 from .routes import auth, health, calls, credentials, dashboard, knowledge_base, export, call_actions, call_analysis, database
@@ -112,6 +113,32 @@ async def login_test(request_data: dict):
             "is_admin": True
         }
     return {"error": "Invalid credentials"}
+
+@app.post("/api/auth/token")
+async def direct_login(request_data: dict):
+    """Direct login endpoint defined on the app itself (bypassing routers)"""
+    try:
+        username = request_data.get("username")
+        password = request_data.get("password")
+        
+        if username == "hamza" and password == "AFINasahbi@-11":
+            return {
+                "access_token": "test_token_from_direct_endpoint",
+                "token_type": "bearer",
+                "username": username,
+                "is_admin": True
+            }
+        else:
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Invalid username or password"}
+            )
+    except Exception as e:
+        logger.error(f"Login error: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Error during authentication: {str(e)}"}
+        )
 
 if __name__ == "__main__":
     import uvicorn
