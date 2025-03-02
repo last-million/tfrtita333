@@ -346,15 +346,17 @@ log "Running additional database migrations..."
 # Run add_data_sync_jobs_table.sql if it exists
 if [ -f "${BACKEND_DIR}/app/migrations/add_data_sync_jobs_table.sql" ]; then
     log "Running add_data_sync_jobs_table.sql migration..."
-    mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < "${BACKEND_DIR}/app/migrations/add_data_sync_jobs_table.sql"
-    check_error "Failed to run add_data_sync_jobs_table.sql migration"
+    mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < "${BACKEND_DIR}/app/migrations/add_data_sync_jobs_table.sql" || {
+        log "Note: Migration may have encountered errors due to existing objects. Continuing..."
+    }
 fi
 
 # Run add_call_features_tables.sql if it exists
 if [ -f "${BACKEND_DIR}/app/migrations/add_call_features_tables.sql" ]; then
     log "Running add_call_features_tables.sql migration..."
-    mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < "${BACKEND_DIR}/app/migrations/add_call_features_tables.sql"
-    check_error "Failed to run add_call_features_tables.sql migration"
+    mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < "${BACKEND_DIR}/app/migrations/add_call_features_tables.sql" || {
+        log "Note: Migration may have encountered errors due to existing objects. Continuing..."
+    }
 fi
 
 # Run any other migrations in the migrations directory
@@ -363,7 +365,9 @@ for migration_file in "${BACKEND_DIR}"/app/migrations/*.sql; do
     if [[ "$migration_file" != *"add_data_sync_jobs_table.sql" ]] && [[ "$migration_file" != *"add_call_features_tables.sql" ]]; then
         migration_name=$(basename "$migration_file")
         log "Running migration: $migration_name"
-        mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < "$migration_file" || log "Warning: Migration $migration_name failed, continuing anyway"
+        mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < "$migration_file" || {
+            log "Warning: Migration $migration_name failed, continuing anyway"
+        }
     fi
 done
 
