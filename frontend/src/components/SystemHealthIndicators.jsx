@@ -1,4 +1,5 @@
 import React from 'react';
+import './SystemHealthIndicators.css';
 
 const SystemHealthIndicators = ({ statuses = {} }) => {
   // Default system components and their status if none provided
@@ -16,40 +17,42 @@ const SystemHealthIndicators = ({ statuses = {} }) => {
   const getStatusIndicator = (status) => {
     switch (status) {
       case 'healthy':
-        return { icon: '✅', color: 'var(--success-color)', text: 'Healthy' };
+        return { icon: '✅', color: '#28a745', text: 'Healthy' };
       case 'warning':
-        return { icon: '⚠️', color: 'var(--warning-color)', text: 'Warning' };
+        return { icon: '⚠️', color: '#ffc107', text: 'Warning' };
       case 'error':
-        return { icon: '❌', color: 'var(--danger-color)', text: 'Error' };
+        return { icon: '❌', color: '#dc3545', text: 'Error' };
       case 'inactive':
-        return { icon: '⭘', color: 'var(--secondary-color)', text: 'Inactive' };
+        return { icon: '⭘', color: '#6c757d', text: 'Inactive' };
       default:
-        return { icon: '❓', color: 'var(--secondary-color)', text: 'Unknown' };
+        return { icon: '❓', color: '#6c757d', text: 'Unknown' };
     }
   };
 
   return (
-    <div className="system-health-container">
-      <h4>System Health</h4>
+    <div className="system-indicator-card">
+      <h3>System Health</h3>
       <div className="system-health-grid">
         {Object.entries(systemStatuses).map(([system, info]) => {
           const statusInfo = getStatusIndicator(info.status);
           return (
-            <div key={system} className="health-indicator">
-              <div className="health-icon" style={{ color: statusInfo.color }}>
-                {statusInfo.icon}
+            <div key={system} className="status-indicator">
+              <div className="status-indicator-label">
+                {system.charAt(0).toUpperCase() + system.slice(1)}
               </div>
-              <div className="health-details">
-                <span className="health-name">{system.charAt(0).toUpperCase() + system.slice(1)}</span>
-                <span className="health-status" style={{ color: statusInfo.color }}>
-                  {statusInfo.text}
-                </span>
-                {info.message && <span className="health-message">{info.message}</span>}
-                <span className="health-time">Last checked: {info.lastChecked}</span>
+              <div className="status-indicator-value">
+                <span className={`status-dot ${info.status}`}></span>
+                {statusInfo.text}
+                {info.message && (
+                  <span className="status-message"> - {info.message}</span>
+                )}
               </div>
             </div>
           );
         })}
+      </div>
+      <div className="card-footer">
+        <span className="timestamp">Last updated: {new Date().toLocaleTimeString()}</span>
       </div>
     </div>
   );
