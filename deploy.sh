@@ -615,7 +615,7 @@ check_error "Failed to create frontend .env file"
 
 # Install frontend dependencies and build
 log "Installing frontend dependencies..."
-npm ci || npm install || npm install --force
+npm install || npm install --force
 check_error "Failed to install frontend dependencies"
 
 log "Building frontend..."
