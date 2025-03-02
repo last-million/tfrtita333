@@ -55,8 +55,8 @@ async def shutdown_event():
     except Exception as e:
         logger.error(f"Error during shutdown: {e}")
 
-# Include routers
-app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+# Include routers - auth router doesn't need a prefix as routes already include full paths
+app.include_router(auth.router, tags=["Authentication"])
 app.include_router(health.router, prefix="/api/health", tags=["Health"])
 app.include_router(calls.router, prefix="/api/calls", tags=["Calls"])
 app.include_router(credentials.router, prefix="/api/credentials", tags=["Credentials"])
