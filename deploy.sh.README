@@ -1,0 +1,79 @@
+# Deploy.sh - Deployment Script
+
+This file provides information about the deployment script and troubleshooting steps in case of issues.
+
+## Overview
+
+The `deploy.sh` script is designed to automate the deployment of the Voice Call AI application. It performs the following tasks:
+- Installs and configures Node.js, MySQL, Nginx
+- Sets up proper firewall rules
+- Configures SSL certificates
+- Installs and configures the backend application
+- Builds and deploys the frontend application
+
+## Troubleshooting
+
+If the deployment script hangs or fails, here are some common issues and solutions:
+
+### UFW Firewall Hanging
+
+If the script hangs while configuring UFW firewall, you can:
+1. Press Ctrl+C to interrupt the script
+2. Run manually: `sudo ufw --force reset && sudo ufw default deny incoming && sudo ufw default allow outgoing && sudo ufw allow OpenSSH`
+3. Continue with the rest of the steps manually
+
+### IPTables Persistence Hanging
+
+If the script hangs during the iptables-persistent installation:
+1. Press Ctrl+C to interrupt
+2. Run `sudo DEBIAN_FRONTEND=noninteractive apt install -y iptables-persistent`
+3. Continue with the rest of the steps
+
+### MySQL Installation Issues
+
+If MySQL installation fails or hangs:
+1. Ensure MySQL is completely removed: `sudo apt purge -y mysql-server mysql-client mysql-common`
+2. Remove MySQL data directories: `sudo rm -rf /var/lib/mysql /etc/mysql`
+3. Try reinstalling with: `sudo apt install -y mysql-server`
+
+### Frontend Build Failing
+
+If frontend build fails:
+1. Navigate to the frontend directory: `cd [path_to_repo]/frontend`
+2. Try building manually: `npm install --no-audit --prefer-offline && npm run build`
+3. Check for specific error messages in the build output
+
+## Manual Deployment
+
+If the automated script fails consistently, you can perform the deployment manually by following these steps:
+
+1. Install required packages:
+   ```
+   sudo apt update && sudo apt install -y nodejs nginx mysql-server
+   ```
+
+2. Configure MySQL:
+   ```
+   sudo mysql_secure_installation
+   ```
+
+3. Create database and user:
+   ```
+   sudo mysql -e "CREATE DATABASE voice_call_ai; CREATE USER 'hamza'@'localhost' IDENTIFIED BY 'password'; GRANT ALL PRIVILEGES ON voice_call_ai.* TO 'hamza'@'localhost';"
+   ```
+
+4. Set up Python environment:
+   ```
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r backend/requirements.txt
+   ```
+
+5. Configure Nginx:
+   ```
+   sudo vim /etc/nginx/sites-available/yourdomain.com
+   ```
+
+## Support
+
+For additional support, please contact the development team.
