@@ -1,29 +1,27 @@
-/* Resource Usage Gauge Styles */
+/* ResourceUsageGauge.css */
 .resource-gauge {
   position: relative;
-  margin-bottom: 15px;
+  margin-bottom: 16px;
 }
 
 .gauge-info {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
 }
 
 .gauge-label {
-  font-size: 0.85rem;
-  color: var(--text-muted, #a0a0c0);
-  font-weight: 500;
+  color: #555;
 }
 
 .gauge-value {
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .gauge-bar-container {
   height: 8px;
-  background-color: var(--bg-dark, #1c1c2a);
+  background-color: #e9ecef;
   border-radius: 4px;
   overflow: hidden;
   position: relative;
@@ -31,103 +29,67 @@
 
 .gauge-bar {
   height: 100%;
-  transition: width 0.5s ease-in-out, background-color 0.3s ease;
   border-radius: 4px;
+  transition: width 0.5s ease-in-out;
 }
 
-/* Status colors */
+/* Status-based colors */
 .gauge-bar.safe {
-  background-color: var(--success-color, #2ecc71);
-  box-shadow: 0 0 5px rgba(46, 204, 113, 0.5);
+  background-color: #28a745;
 }
 
 .gauge-bar.warning {
-  background-color: var(--warning-color, #f39c12);
-  box-shadow: 0 0 5px rgba(243, 156, 18, 0.5);
+  background-color: #ffc107;
 }
 
 .gauge-bar.critical {
-  background-color: var(--error-color, #e74c3c);
-  box-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+  background-color: #dc3545;
+  position: relative;
+  overflow: hidden;
 }
 
 /* Threshold markers */
 .threshold-markers {
   position: relative;
-  height: 5px;
-  margin-top: 2px;
+  height: 4px;
 }
 
 .threshold-marker {
   position: absolute;
-  height: 5px;
   width: 2px;
-  top: 0;
+  height: 8px;
+  bottom: 0;
+  transform: translateY(-2px);
 }
 
 .threshold-marker.safe {
-  background-color: var(--success-color, #2ecc71);
+  background-color: rgba(40, 167, 69, 0.7);
 }
 
 .threshold-marker.warning {
-  background-color: var(--warning-color, #f39c12);
+  background-color: rgba(255, 193, 7, 0.7);
 }
 
-/* Pulse animation for critical state */
+/* Pulse effect for critical status */
 .pulse-effect {
   position: absolute;
-  right: 0;
   top: 0;
-  height: 100%;
-  width: 10px;
-  background-color: rgba(255, 255, 255, 0.7);
-  animation: pulse 1.5s infinite;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.2);
+  opacity: 0;
+  animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
   0% {
     opacity: 0;
-    transform: translateX(0);
   }
   50% {
-    opacity: 0.7;
+    opacity: 0.5;
   }
   100% {
     opacity: 0;
-    transform: translateX(-20px);
-  }
-}
-
-/* Status text colors */
-.gauge-value.safe {
-  color: var(--success-color, #2ecc71);
-}
-
-.gauge-value.warning {
-  color: var(--warning-color, #f39c12);
-}
-
-.gauge-value.critical {
-  color: var(--error-color, #e74c3c);
-  animation: critical-pulse 2s infinite;
-}
-
-@keyframes critical-pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .resource-gauge {
-    margin-bottom: 12px;
-  }
-  
-  .gauge-bar-container {
-    height: 6px;
   }
 }
