@@ -51,6 +51,7 @@ def create_access_token(data: dict, expires_delta: int = ACCESS_TOKEN_EXPIRE_MIN
     return encoded_jwt
 
 @router.post("/token", response_model=TokenResponse)
+@router.post("/api/auth/token", response_model=TokenResponse)  # Add duplicate route for frontend compatibility
 async def login_for_access_token(request_data: LoginRequest):
     try:
         # Fetch user from database
@@ -105,12 +106,14 @@ async def login_for_access_token(request_data: LoginRequest):
         )
 
 @router.post("/refresh")
+@router.post("/api/auth/refresh")  # Add duplicate route for frontend compatibility
 async def refresh_token(current_user: dict = Depends(lambda: {"sub": "temp"})):
     # Generate a new token with the same claims
     access_token = create_access_token({"sub": current_user["sub"]})
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me", response_model=UserResponse)
+@router.get("/api/auth/me", response_model=UserResponse)  # Add duplicate route for frontend compatibility
 async def get_current_user(current_user: dict = Depends(lambda: {"sub": "temp"})):
     try:
         # Fetch user details from database
