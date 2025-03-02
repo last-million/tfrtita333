@@ -97,18 +97,38 @@ check_error "Failed to install required packages"
 # III. FIREWALL SETUP
 # -----------------------------------------------------------
 log "Configuring UFW firewall..."
-ufw --force reset
-ufw default deny incoming
-ufw default allow outgoing
-ufw allow OpenSSH
-ufw allow "Nginx Full"
-ufw allow 8000
-ufw allow 8080
-ufw allow 3306/tcp
-ufw allow 80/tcp
-ufw allow 443/tcp
-ufw --force enable
-ufw status
+# Save current UFW state
+if systemctl is-active --quiet ufw; then
+  log "UFW is currently active, backing up rules"
+  mkdir -p /etc/ufw/backup
+  cp /etc/ufw/user*.rules /etc/ufw/backup/ 2>/dev/null || true
+fi
+
+# Reset and configure UFW with a timeout to prevent hanging
+log "Resetting UFW rules"
+timeout 30 ufw --force reset || log "WARNING: UFW reset timed out or failed, continuing anyway"
+
+log "Configuring UFW rules"
+# Configure basic rules
+yes | ufw default deny incoming || true
+yes | ufw default allow outgoing || true
+
+# Allow required services
+for service in "OpenSSH" "Nginx Full" "8000" "8080" "3306/tcp" "80/tcp" "443/tcp"; do
+  log "Adding UFW rule: $service"
+  yes | ufw allow "$service" || log "WARNING: Failed to add UFW rule for $service, continuing"
+done
+
+# Enable UFW with timeout and capture output to log
+log "Enabling UFW"
+{
+  timeout 20 sh -c "echo y | ufw --force enable" || log "WARNING: UFW enable timed out, continuing"
+} > /tmp/ufw_output 2>&1
+cat /tmp/ufw_output || true
+
+# Show UFW status without waiting for input
+log "UFW status:"
+timeout 10 ufw status || log "WARNING: Could not get UFW status, continuing"
 
 # -----------------------------------------------------------
 # IV. IPTABLES RULES
@@ -145,9 +165,13 @@ check_error "Failed to apply iptables rules"
 
 # Make iptables rules persistent across reboots
 log "Making iptables rules persistent..."
-apt install -y iptables-persistent
-netfilter-persistent save
-netfilter-persistent reload
+{
+  # Install with auto-accept for all prompts
+  DEBIAN_FRONTEND=noninteractive apt install -y iptables-persistent
+  # Save rules with timeout to prevent hanging
+  timeout 15 netfilter-persistent save || log "WARNING: netfilter-persistent save timed out, continuing"
+  timeout 15 netfilter-persistent reload || log "WARNING: netfilter-persistent reload timed out, continuing"
+} || log "WARNING: Could not make iptables rules persistent, continuing anyway"
 
 # -----------------------------------------------------------
 # V. MYSQL SETUP
