@@ -50,7 +50,7 @@ def create_access_token(data: dict, expires_delta: int = ACCESS_TOKEN_EXPIRE_MIN
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-@router.post("/api/auth/token", response_model=TokenResponse)
+@router.post("/token", response_model=TokenResponse)
 async def login_for_access_token(request_data: LoginRequest):
     try:
         # Fetch user from database
@@ -104,13 +104,13 @@ async def login_for_access_token(request_data: LoginRequest):
             detail=f"Error during authentication: {str(e)}",
         )
 
-@router.post("/api/auth/refresh")
+@router.post("/refresh")
 async def refresh_token(current_user: dict = Depends(lambda: {"sub": "temp"})):
     # Generate a new token with the same claims
     access_token = create_access_token({"sub": current_user["sub"]})
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router.get("/api/auth/me", response_model=UserResponse)
+@router.get("/me", response_model=UserResponse)
 async def get_current_user(current_user: dict = Depends(lambda: {"sub": "temp"})):
     try:
         # Fetch user details from database
@@ -131,7 +131,7 @@ async def get_current_user(current_user: dict = Depends(lambda: {"sub": "temp"})
         )
 
 # Admin-only routes for user management
-@router.get("/api/users", response_model=List[UserResponse])
+@router.get("/users", response_model=List[UserResponse])
 async def get_users(current_user: dict = Depends(lambda: {"is_admin": False})):
     if not current_user.get("is_admin", False):
         raise HTTPException(
@@ -149,7 +149,7 @@ async def get_users(current_user: dict = Depends(lambda: {"is_admin": False})):
             detail=f"Error fetching users: {str(e)}",
         )
 
-@router.post("/api/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user_data: UserCreate, 
     current_user: dict = Depends(lambda: {"is_admin": False})
@@ -200,7 +200,7 @@ async def create_user(
             detail=f"Error creating user: {str(e)}",
         )
 
-@router.put("/api/users/{user_id}", response_model=UserResponse)
+@router.put("/users/{user_id}", response_model=UserResponse)
 async def update_user(
     user_id: int,
     user_data: UserUpdate,
@@ -267,7 +267,7 @@ async def update_user(
             detail=f"Error updating user: {str(e)}",
         )
 
-@router.delete("/api/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     user_id: int,
     current_user: dict = Depends(lambda: {"is_admin": False, "user_id": -1})
