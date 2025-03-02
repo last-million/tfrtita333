@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 // Base API configuration
-const API_URL = import.meta.env.VITE_API_URL || 'https://ajingolik.fun/api';
+// We're using the full URL to ensure proper routing
+const API_URL = 'https://ajingolik.fun/api';
 
 // Create axios instance with default config
 const axiosInstance = axios.create({
