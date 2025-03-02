@@ -27,11 +27,15 @@ axiosInstance.interceptors.request.use(
 export const api = {
   // Authentication endpoints
   auth: {
-    login: (credentials) => axiosInstance.post('/auth/login', credentials),
+    login: (credentials) => axiosInstance.post('/auth/token', credentials),
+    // Fallback login method using our simplified endpoint if the main one fails
+    loginSimple: (credentials) => axiosInstance.post('/auth/token-simple', credentials),
     register: (userData) => axiosInstance.post('/auth/register', userData),
     logout: () => axiosInstance.post('/auth/logout'),
     refreshToken: () => axiosInstance.post('/auth/refresh'),
     resetPassword: (email) => axiosInstance.post('/auth/reset-password', { email }),
+    // Debug method to test API connectivity
+    testConnection: () => axiosInstance.get('/test-routes'),
   },
 
   // User management
