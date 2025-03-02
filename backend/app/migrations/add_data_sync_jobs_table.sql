@@ -16,4 +16,4 @@ CREATE TABLE IF NOT EXISTS data_sync_jobs (
 );
 
 -- Add index for performance
-CREATE INDEX idx_data_sync_active ON data_sync_jobs (is_active);
+CREATE INDEX IF NOT EXISTS idx_data_sync_active ON data_sync_jobs (is_active);
