@@ -515,7 +515,10 @@ async def create_tables():
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         username VARCHAR(255) UNIQUE NOT NULL,
                         password_hash VARCHAR(255) NOT NULL,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        is_admin BOOLEAN DEFAULT FALSE,
+                        is_active BOOLEAN DEFAULT TRUE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                     )
                 """
             },
@@ -568,8 +571,8 @@ async def create_tables():
                 # Hash the password before storing it
                 hashed_password = hash_password('AFINasahbi@-11')
                 await db.execute(
-                    "INSERT INTO users (username, password_hash) VALUES (%s, %s)",
-                    ('admin', hashed_password)
+                    "INSERT INTO users (username, password_hash, is_admin, is_active) VALUES (%s, %s, %s, %s)",
+                    ('admin', hashed_password, True, True)
                 )
             
             # Check if hamza user exists
@@ -578,8 +581,8 @@ async def create_tables():
                 # Hash the password before storing it
                 hashed_password = hash_password('AFINasahbi@-11')
                 await db.execute(
-                    "INSERT INTO users (username, password_hash) VALUES (%s, %s)",
-                    ('hamza', hashed_password)
+                    "INSERT INTO users (username, password_hash, is_admin, is_active) VALUES (%s, %s, %s, %s)",
+                    ('hamza', hashed_password, True, True)
                 )
                 
             # Run the service tables migration if it exists
