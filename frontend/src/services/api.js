@@ -31,6 +31,8 @@ export const api = {
     login: (credentials) => axiosInstance.post('/auth/token', credentials),
     // Fallback login method using our simplified endpoint if the main one fails
     loginSimple: (credentials) => axiosInstance.post('/auth/token-simple', credentials),
+    // Direct path as fallback for when the router doesn't handle the path correctly
+    loginDirect: (credentials) => axios.post('https://ajingolik.fun/api/auth/token-simple', credentials),
     register: (userData) => axiosInstance.post('/auth/register', userData),
     logout: () => axiosInstance.post('/auth/logout'),
     refreshToken: () => axiosInstance.post('/auth/refresh'),
