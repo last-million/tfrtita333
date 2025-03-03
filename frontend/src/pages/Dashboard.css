@@ -86,9 +86,19 @@ body.dark-mode {
 }
 
 .dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   gap: 24px;
+  overflow-x: auto;
+  padding-bottom: 16px; /* Add padding to show scrollbar */
+  margin-bottom: 20px;
+}
+
+.dashboard-grid > div {
+  min-width: 320px;
+  width: 100%;
+  flex: 1;
 }
 
 .dashboard-card {
