@@ -59,12 +59,21 @@ const Login = () => {
       } catch (simpleError) {
         console.error("Simple login error:", simpleError);
         
-        // Show detailed error info
-        setError(
-          `Login failed: ${mainError.message || 'Unknown error'}. 
-          Response status: ${mainError.response?.status || 'N/A'}. 
-          ${mainError.response?.data ? 'Server message: ' + JSON.stringify(mainError.response.data) : ''}`
-        );
+        try {
+          // If both methods fail, try the direct URL approach
+          console.log("Attempting login with direct endpoint...");
+          const response = await api.auth.loginDirect({ username, password });
+          handleLoginSuccess(response);
+        } catch (directError) {
+          console.error("Direct login error:", directError);
+          
+          // Show detailed error info from all three attempts
+          setError(
+            `Login failed with all methods. Main error: ${mainError.message || 'Unknown error'}. 
+            Direct error: ${directError.message || 'Unknown error'}.
+            Response status: ${mainError.response?.status || 'N/A'}.`
+          );
+        }
       }
     } finally {
       setIsLoading(false);
