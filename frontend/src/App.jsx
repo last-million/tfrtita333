@@ -1,6 +1,6 @@
 // frontend/src/App.jsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { KnowledgeBaseProvider } from './context/KnowledgeBaseContext';
@@ -23,6 +23,10 @@ import LoginPage from './pages/LoginPage';
 import './App.css';
 
 const Layout = ({ children }) => {
+  // Get current path to highlight the active link
+  const location = useLocation();
+  const currentPath = location.pathname;
+  
   return (
     <div className="app-container">
       <div className="top-navbar">
@@ -31,12 +35,13 @@ const Layout = ({ children }) => {
           Voice Call AI
         </div>
         <div className="top-nav-links">
-          <a href="/" className="top-nav-link">Dashboard</a>
-          <a href="/calls" className="top-nav-link">Call Manager</a>
-          <a href="/call-history" className="top-nav-link">Call History</a>
-          <a href="/knowledge-base" className="top-nav-link">Knowledge Base</a>
-          <a href="/system-config" className="top-nav-link">System Config</a>
-          <a href="/auth" className="top-nav-link">Services</a>
+          <Link to="/" className={`top-nav-link ${currentPath === '/' ? 'active' : ''}`}>Dashboard</Link>
+          <Link to="/calls" className={`top-nav-link ${currentPath === '/calls' ? 'active' : ''}`}>Call Manager</Link>
+          <Link to="/call-history" className={`top-nav-link ${currentPath === '/call-history' ? 'active' : ''}`}>Call History</Link>
+          <Link to="/knowledge-base" className={`top-nav-link ${currentPath === '/knowledge-base' ? 'active' : ''}`}>Knowledge Base</Link>
+          <Link to="/system-config" className={`top-nav-link ${currentPath === '/system-config' ? 'active' : ''}`}>System Config</Link>
+          <Link to="/auth" className={`top-nav-link ${currentPath === '/auth' ? 'active' : ''}`}>Services</Link>
+          <Link to="/login" className="top-nav-link login-link">Logout</Link>
         </div>
         <div style={{ marginLeft: 'auto' }}>
           <Header />
