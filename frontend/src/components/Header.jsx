@@ -1,13 +1,16 @@
-import React from 'react'
-import ThemeToggle from './ThemeToggle'
-import './Header.css'
+import React from 'react';
+import ThemeToggle from './ThemeToggle';
+import './Header.css';
 import { useLanguage } from '../context/LanguageContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import translations from '../translations';
 
 function Header() {
   const location = useLocation();
   const { language, setLanguage } = useLanguage();
+  const { user } = useAuth();
+  const currentPath = location.pathname;
 
   // Get current page title based on route
   const getPageTitle = () => {
@@ -44,6 +47,22 @@ function Header() {
       <div className="header-title">
         <h1>{getPageTitle()}</h1>
       </div>
+      
+      <div className="header-menu">
+        <Link to="/" className={`header-menu-item ${currentPath === '/' ? 'active' : ''}`}>
+          Dashboard
+        </Link>
+        <Link to="/calls" className={`header-menu-item ${currentPath === '/calls' ? 'active' : ''}`}>
+          Call Manager
+        </Link>
+        <Link to="/call-history" className={`header-menu-item ${currentPath === '/call-history' ? 'active' : ''}`}>
+          Call History
+        </Link>
+        <Link to="/knowledge-base" className={`header-menu-item ${currentPath === '/knowledge-base' ? 'active' : ''}`}>
+          Knowledge Base
+        </Link>
+      </div>
+      
       <div className="header-actions">
         <div className="language-selector">
           <select 
@@ -57,9 +76,14 @@ function Header() {
           </select>
         </div>
         <ThemeToggle />
+        <div className="user-profile">
+          <div className="avatar">
+            {user?.username?.charAt(0)?.toUpperCase() || 'H'}
+          </div>
+        </div>
       </div>
     </header>
-  )
+  );
 }
 
-export default Header
+export default Header;
