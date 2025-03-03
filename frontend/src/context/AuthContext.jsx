@@ -5,31 +5,53 @@ import axios from 'axios';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState({ username: 'default_user' }); // Always set a default user
-  const [loading, setLoading] = useState(false); // No loading needed
+  const [user, setUser] = useState({ 
+    username: 'hamza', 
+    isAdmin: true,
+    email: 'hamzameliani1@gmail.com',
+    role: 'Administrator'
+  });
+  const [loading, setLoading] = useState(false);
 
-  // No need to check authentication on load
+  // Initialize auth data on load
   useEffect(() => {
-    // Set a dummy token to ensure all API calls work
-    localStorage.setItem('token', 'dummy_token');
+    // Set demo authentication data for the application
+    localStorage.setItem('token', 'demo-token-for-testing');
+    localStorage.setItem('username', 'hamza');
+    localStorage.setItem('isAdmin', 'true');
+    
+    // Set default auth header for axios requests
+    axios.defaults.headers.common['Authorization'] = `Bearer demo-token-for-testing`;
   }, []);
 
-  // Simplified checkAuth that always succeeds
+  // Always succeed with auth checks
   const checkAuth = async () => {
     return true;
   };
 
   // Simplified login that always succeeds
   const login = async (username, password) => {
-    // No need to actually call the API
-    localStorage.setItem('token', 'dummy_token');
-    setUser({ username: username || 'default_user' });
+    const userData = {
+      username: username || 'hamza',
+      isAdmin: true,
+      email: 'hamzameliani1@gmail.com',
+      role: 'Administrator'
+    };
+    
+    localStorage.setItem('token', 'demo-token-for-testing');
+    localStorage.setItem('username', userData.username);
+    localStorage.setItem('isAdmin', 'true');
+    
+    axios.defaults.headers.common['Authorization'] = `Bearer demo-token-for-testing`;
+    
+    setUser(userData);
     return true;
   };
 
   const logout = () => {
-    // No real logout needed, but keep the function for compatibility
-    // Don't remove the token so the user stays logged in
+    // For demo purposes, we'll maintain login state
+    // In a real app, we would clear all auth data here
+    console.log('Logout requested (simulated)');
   };
 
   return (
