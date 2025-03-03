@@ -62,6 +62,7 @@ export const api = {
     getTranscript: (id) => axiosInstance.get(`/calls/${id}/transcript`),
     getAnalysis: (id) => axiosInstance.get(`/calls/${id}/analysis`),
     getActions: (id) => axiosInstance.get(`/calls/${id}/actions`),
+    initiate: (phoneNumber, ultravoxUrl) => axiosInstance.post('/calls/initiate', { phoneNumber, ultravoxUrl }),
   },
 
   // Knowledge base
@@ -95,6 +96,17 @@ export const api = {
     getConnections: () => axiosInstance.get('/services/connections'),
     updateConnection: (service, config) => axiosInstance.put(`/services/${service}`, config),
     testConnection: (service) => axiosInstance.post(`/services/${service}/test`),
+    getStatus: (serviceName) => {
+      // Return mock status for various services
+      const mockResponse = {
+        data: {
+          connected: serviceName === 'Twilio' || serviceName === 'Ultravox',
+          status: 'healthy',
+          lastChecked: new Date().toISOString()
+        }
+      };
+      return Promise.resolve(mockResponse);
+    }
   },
   
   // System settings and configuration
