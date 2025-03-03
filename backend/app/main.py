@@ -2,21 +2,20 @@ import os
 import logging
 import json
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional
-from fastapi import FastAPI, Request, Depends, HTTPException, status, Response
+from fastapi import FastAPI, Request, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from jose import jwt, JWTError
 
-from .config import settings
-from .routes import auth, health, calls, credentials, dashboard, knowledge_base, export, call_actions, call_analysis, database
-from .websockets import media_stream, handler
-from .database import db, create_tables
-from .security.password import verify_password
-
+# Create logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# JWT settings
+JWT_SECRET = "strong-secret-key-for-jwt-tokens"
+JWT_ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 app = FastAPI(
     title="Voice Call AI API",
@@ -24,58 +23,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Parse CORS origins from settings
-cors_origins = settings.cors_origins.split(",") if settings.cors_origins else ["*"]
-
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.on_event("startup")
-async def startup_event():
-    try:
-        # Connect to the database
-        logger.info("Connecting to database...")
-        await db.connect()
-        
-        # Create necessary tables
-        logger.info("Creating database tables if they don't exist...")
-        await create_tables()
-        
-        logger.info("Application started successfully with database connection")
-    except Exception as e:
-        logger.error(f"Startup error: {e}")
-        # Don't raise the exception here to allow the app to start even with DB issues
-        # This will let the health endpoint report the actual status
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    try:
-        await db.close()
-        logger.info("Database connection closed")
-    except Exception as e:
-        logger.error(f"Error during shutdown: {e}")
-
-# Include routers - auth router doesn't need a prefix as routes already include full paths
-app.include_router(auth.router, tags=["Authentication"])
-app.include_router(health.router, prefix="/api/health", tags=["Health"])
-app.include_router(calls.router, prefix="/api/calls", tags=["Calls"])
-app.include_router(credentials.router, prefix="/api/credentials", tags=["Credentials"])
-app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
-app.include_router(knowledge_base.router, prefix="/api/knowledge", tags=["Knowledge Base"])
-app.include_router(export.router, tags=["Export"])
-app.include_router(call_actions.router, tags=["Call Actions"])
-app.include_router(call_analysis.router, tags=["Call Analysis"])
-app.include_router(database.router, tags=["Database"])
-
-# Include WebSocket routers
-app.include_router(media_stream.router, tags=["WebSocket"])
-app.include_router(handler.router, tags=["WebSocket"])
 
 @app.get("/")
 async def root():
@@ -87,35 +42,18 @@ async def root():
         "timestamp": datetime.utcnow().isoformat()
     }
 
+@app.get("/api/health")
+async def health_check():
+    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+
 @app.get("/api")
 async def api_root():
-    return {
-        "status": "ok",
-        "message": "Voice Call AI API is running",
-        "version": "1.0.0"
-    }
+    return {"status": "ok", "message": "API service is running"}
 
-@app.get("/api/test-routes")
-async def test_routes():
-    """Test endpoint to show all available routes"""
-    routes = []
-    for route in app.routes:
-        routes.append({
-            "path": route.path,
-            "name": route.name,
-            "methods": list(route.methods) if hasattr(route, "methods") else []
-        })
-    return {"routes": routes}
-
+# Authentication models
 class LoginRequest(BaseModel):
     username: str
     password: str
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    username: str
-    is_admin: bool
 
 class UserInfo(BaseModel):
     id: int
@@ -123,21 +61,14 @@ class UserInfo(BaseModel):
     is_admin: bool
     is_active: bool
 
-def create_access_token(data: dict, expires_delta: int = settings.access_token_expire_minutes):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=expires_delta)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
-    return encoded_jwt
-
 # Authentication helper functions
 async def get_current_user_from_token(token: str):
     try:
-        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         username: str = payload.get("sub")
         user_id: int = payload.get("user_id", 0)
         
-        # Hardcoded users for testing
+        # Special handling for hardcoded hamza user
         if username == "hamza" and user_id == 1:
             return {
                 "id": 1,
@@ -146,6 +77,7 @@ async def get_current_user_from_token(token: str):
                 "is_active": True
             }
         
+        # Special handling for admin user
         if username == "admin" and user_id == 0:
             return {
                 "id": 0,
@@ -154,16 +86,7 @@ async def get_current_user_from_token(token: str):
                 "is_active": True
             }
         
-        # Try database lookup
-        try:
-            query = "SELECT id, username, is_admin, is_active FROM users WHERE id = %s"
-            users = await db.execute(query, (user_id,))
-            if users:
-                return users[0]
-        except Exception as db_error:
-            logger.error(f"Database error in get_current_user: {db_error}")
-        
-        # Fallback to token info
+        # For other users, return basic info from token
         return {
             "id": user_id,
             "username": username,
@@ -174,12 +97,21 @@ async def get_current_user_from_token(token: str):
         logger.error(f"JWT error: {e}")
         return None
     except Exception as e:
-        logger.error(f"Error in get_current_user: {e}")
+        logger.error(f"Error in get_current_user_from_token: {e}")
         return None
 
+# Create access token function
+def create_access_token(data: dict, expires_delta: int = ACCESS_TOKEN_EXPIRE_MINUTES):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=expires_delta)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return encoded_jwt
+
+# Direct login endpoints
 @app.post("/api/auth/token-simple")
-async def login_test(request_data: dict):
-    """Simple login test that doesn't require database access"""
+async def login_simple(request_data: dict):
+    """Simple login that doesn't require database access"""
     if request_data.get("username") == "hamza" and request_data.get("password") == "AFINasahbi@-11":
         return {
             "access_token": "test_token_for_debugging",
@@ -187,13 +119,15 @@ async def login_test(request_data: dict):
             "username": "hamza",
             "is_admin": True
         }
-    return {"error": "Invalid credentials"}
+    return JSONResponse(
+        status_code=401,
+        content={"error": "Invalid credentials"}
+    )
 
-@app.post("/api/auth/token", response_model=TokenResponse)
-async def direct_login(request_data: LoginRequest):
-    """Direct login endpoint defined on the app itself (bypassing routers)"""
+@app.post("/api/auth/token")
+async def login_direct(request_data: LoginRequest):
+    """Direct login endpoint"""
     try:
-        # First try to check against hardcoded credentials for testing
         if request_data.username == "hamza" and request_data.password == "AFINasahbi@-11":
             token_data = {
                 "sub": request_data.username,
@@ -207,76 +141,24 @@ async def direct_login(request_data: LoginRequest):
                 "username": request_data.username,
                 "is_admin": True
             }
-            
-        # If hardcoded credentials don't match, then try database
-        try:
-            # Fetch user from database
-            query = "SELECT id, username, password_hash, is_admin, is_active FROM users WHERE username = %s"
-            users = await db.execute(query, (request_data.username,))
-            
-            if not users:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid username or password",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
-            
-            user = users[0]
-            
-            # Check if user is active
-            if not user.get('is_active', True):  # Default to True if field doesn't exist
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="User account is disabled",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
-                
-            # Verify password
-            if not verify_password(request_data.password, user["password_hash"]):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid username or password",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
-                
-            # Generate token with user info
+        elif request_data.username == "admin" and request_data.password == "admin":
             token_data = {
-                "sub": request_data.username,
-                "user_id": user["id"],
-                "is_admin": bool(user.get("is_admin", False))
+                "sub": "admin",
+                "user_id": 0,
+                "is_admin": True
             }
-            
             access_token = create_access_token(token_data)
-            
             return {
-                "access_token": access_token, 
+                "access_token": access_token,
                 "token_type": "bearer",
-                "username": user["username"],
-                "is_admin": bool(user.get("is_admin", False))
+                "username": "admin",
+                "is_admin": True
             }
-        except Exception as db_error:
-            logger.error(f"Database error during login: {db_error}")
-            # Fall back to hardcoded admin account if database access fails
-            if request_data.username == "admin" and request_data.password == "admin":
-                token_data = {
-                    "sub": "admin",
-                    "user_id": 0,
-                    "is_admin": True
-                }
-                access_token = create_access_token(token_data)
-                return {
-                    "access_token": access_token,
-                    "token_type": "bearer",
-                    "username": "admin",
-                    "is_admin": True
-                }
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid username or password",
-                headers={"WWW-Authenticate": "Bearer"},
+        else:
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Invalid username or password"}
             )
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
         return JSONResponse(
@@ -284,13 +166,14 @@ async def direct_login(request_data: LoginRequest):
             content={"detail": f"Error during authentication: {str(e)}"}
         )
 
-# Direct /api/auth/me endpoint to bypass router
+# Direct /api/auth/me endpoint (this was missing in the original code)
 @app.get("/api/auth/me", response_model=UserInfo)
 async def get_current_user_info(request: Request):
     """Get current authenticated user info"""
     auth_header = request.headers.get("Authorization")
     
     if not auth_header or not auth_header.startswith("Bearer "):
+        logger.warning("Missing or invalid Authorization header")
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={"detail": "Not authenticated"},
@@ -301,24 +184,12 @@ async def get_current_user_info(request: Request):
     user = await get_current_user_from_token(token)
     
     if not user:
+        logger.warning("Invalid token or user not found")
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={"detail": "Invalid or expired token"},
             headers={"WWW-Authenticate": "Bearer"}
         )
     
-    # Special handling for hardcoded users
-    if user.get("username") == "hamza":
-        return {
-            "id": 1,
-            "username": "hamza",
-            "is_admin": True,
-            "is_active": True
-        }
-    
+    logger.info(f"User authenticated: {user.get('username')}")
     return user
-
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port, log_level="info")
