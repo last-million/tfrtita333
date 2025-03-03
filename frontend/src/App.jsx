@@ -25,9 +25,24 @@ import './App.css';
 const Layout = ({ children }) => {
   return (
     <div className="app-container">
-      <Navbar />
+      <div className="top-navbar">
+        <div className="app-logo">
+          <img src="/logo.svg" alt="Voice Call AI" style={{ height: '30px', marginRight: '10px' }} />
+          Voice Call AI
+        </div>
+        <div className="top-nav-links">
+          <a href="/" className="top-nav-link">Dashboard</a>
+          <a href="/calls" className="top-nav-link">Call Manager</a>
+          <a href="/call-history" className="top-nav-link">Call History</a>
+          <a href="/knowledge-base" className="top-nav-link">Knowledge Base</a>
+          <a href="/system-config" className="top-nav-link">System Config</a>
+          <a href="/auth" className="top-nav-link">Services</a>
+        </div>
+        <div style={{ marginLeft: 'auto' }}>
+          <Header />
+        </div>
+      </div>
       <div className="content-wrapper">
-        <Header />
         <main className="main-content">
           {children}
         </main>
