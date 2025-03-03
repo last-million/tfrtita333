@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request, Depends, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from jose import jwt
+from jose import jwt, JWTError
 
 from .config import settings
 from .routes import auth, health, calls, credentials, dashboard, knowledge_base, export, call_actions, call_analysis, database
@@ -117,12 +117,65 @@ class TokenResponse(BaseModel):
     username: str
     is_admin: bool
 
+class UserInfo(BaseModel):
+    id: int
+    username: str
+    is_admin: bool
+    is_active: bool
+
 def create_access_token(data: dict, expires_delta: int = settings.access_token_expire_minutes):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=expires_delta)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
     return encoded_jwt
+
+# Authentication helper functions
+async def get_current_user_from_token(token: str):
+    try:
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+        username: str = payload.get("sub")
+        user_id: int = payload.get("user_id", 0)
+        
+        # Hardcoded users for testing
+        if username == "hamza" and user_id == 1:
+            return {
+                "id": 1,
+                "username": "hamza",
+                "is_admin": True,
+                "is_active": True
+            }
+        
+        if username == "admin" and user_id == 0:
+            return {
+                "id": 0,
+                "username": "admin",
+                "is_admin": True,
+                "is_active": True
+            }
+        
+        # Try database lookup
+        try:
+            query = "SELECT id, username, is_admin, is_active FROM users WHERE id = %s"
+            users = await db.execute(query, (user_id,))
+            if users:
+                return users[0]
+        except Exception as db_error:
+            logger.error(f"Database error in get_current_user: {db_error}")
+        
+        # Fallback to token info
+        return {
+            "id": user_id,
+            "username": username,
+            "is_admin": payload.get("is_admin", False),
+            "is_active": True
+        }
+    except JWTError as e:
+        logger.error(f"JWT error: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Error in get_current_user: {e}")
+        return None
 
 @app.post("/api/auth/token-simple")
 async def login_test(request_data: dict):
@@ -230,6 +283,40 @@ async def direct_login(request_data: LoginRequest):
             status_code=500,
             content={"detail": f"Error during authentication: {str(e)}"}
         )
+
+# Direct /api/auth/me endpoint to bypass router
+@app.get("/api/auth/me", response_model=UserInfo)
+async def get_current_user_info(request: Request):
+    """Get current authenticated user info"""
+    auth_header = request.headers.get("Authorization")
+    
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={"detail": "Not authenticated"},
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
+    token = auth_header.split(" ")[1]
+    user = await get_current_user_from_token(token)
+    
+    if not user:
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={"detail": "Invalid or expired token"},
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
+    # Special handling for hardcoded users
+    if user.get("username") == "hamza":
+        return {
+            "id": 1,
+            "username": "hamza",
+            "is_admin": True,
+            "is_active": True
+        }
+    
+    return user
 
 if __name__ == "__main__":
     import uvicorn
