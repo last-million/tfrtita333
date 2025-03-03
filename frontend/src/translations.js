@@ -20,6 +20,25 @@ const translations = {
     activeServices: 'Active Services',
     systemHealth: 'System Health',
     
+    // Call Manager
+    callManagement: 'Call Management',
+    bulkCallInterface: 'Bulk Call Interface',
+    outboundCalls: 'Outbound Calls',
+    inboundCalls: 'Inbound Calls',
+    enterPhoneNumbers: 'Enter phone numbers (one per line)',
+    initiateCalls: 'Initiate Calls',
+    configureYourTwilio: 'Configure your Twilio webhook with the following URL:',
+    selectVoice: 'Select Voice',
+    existingClients: 'Existing Clients',
+    addClient: 'Add Client',
+    updateClient: 'Update Client',
+    callSelected: 'Call Selected',
+    name: 'Name',
+    phoneNumber: 'Phone Number',
+    email: 'Email',
+    address: 'Address',
+    actions: 'Actions',
+    
     // Call Capacity
     liveData: 'Live',
     theoretical: 'Theoretical',
