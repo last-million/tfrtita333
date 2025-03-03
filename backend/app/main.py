@@ -112,13 +112,16 @@ def create_access_token(data: dict, expires_delta: int = ACCESS_TOKEN_EXPIRE_MIN
 @app.post("/api/auth/token-simple")
 async def login_simple(request_data: dict):
     """Simple login that doesn't require database access"""
+    logger.info(f"Simple login attempt for user: {request_data.get('username')}")
     if request_data.get("username") == "hamza" and request_data.get("password") == "AFINasahbi@-11":
+        logger.info("Simple login successful!")
         return {
             "access_token": "test_token_for_debugging",
             "token_type": "bearer",
             "username": "hamza",
             "is_admin": True
         }
+    logger.warning(f"Simple login failed for user: {request_data.get('username')}")
     return JSONResponse(
         status_code=401,
         content={"error": "Invalid credentials"}
@@ -127,8 +130,10 @@ async def login_simple(request_data: dict):
 @app.post("/api/auth/token")
 async def login_direct(request_data: LoginRequest):
     """Direct login endpoint"""
+    logger.info(f"Login attempt for user: {request_data.username}")
     try:
         if request_data.username == "hamza" and request_data.password == "AFINasahbi@-11":
+            logger.info("Login successful for hamza")
             token_data = {
                 "sub": request_data.username,
                 "user_id": 1,
@@ -142,6 +147,7 @@ async def login_direct(request_data: LoginRequest):
                 "is_admin": True
             }
         elif request_data.username == "admin" and request_data.password == "admin":
+            logger.info("Login successful for admin")
             token_data = {
                 "sub": "admin",
                 "user_id": 0,
@@ -155,6 +161,7 @@ async def login_direct(request_data: LoginRequest):
                 "is_admin": True
             }
         else:
+            logger.warning(f"Invalid login attempt for user: {request_data.username}")
             return JSONResponse(
                 status_code=401,
                 content={"detail": "Invalid username or password"}
@@ -170,6 +177,7 @@ async def login_direct(request_data: LoginRequest):
 @app.get("/api/auth/me", response_model=UserInfo)
 async def get_current_user_info(request: Request):
     """Get current authenticated user info"""
+    logger.info("Auth/me endpoint called")
     auth_header = request.headers.get("Authorization")
     
     if not auth_header or not auth_header.startswith("Bearer "):
