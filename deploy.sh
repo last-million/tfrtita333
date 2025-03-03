@@ -426,7 +426,18 @@ else
 fi
 
 # -----------------------------------------------------------
-# VI. APPLICATION SETUP
+# VI. VIRTUAL ENVIRONMENT SETUP (Moved to beginning)
+# -----------------------------------------------------------
+log "Setting up Python virtual environment..."
+
+# Create and activate Python virtual environment
+python3 -m venv venv || { log "ERROR: Failed to create Python virtual environment"; exit 1; }
+source venv/bin/activate
+pip install --upgrade pip setuptools wheel cython
+check_error "Failed to upgrade pip and install basic packages"
+
+# -----------------------------------------------------------
+# VII. APPLICATION SETUP
 # -----------------------------------------------------------
 log "Setting up the application environment in ${APP_DIR}..."
 
@@ -435,17 +446,10 @@ BACKUP_DIR="${APP_DIR}/backups/$(date +%Y%m%d_%H%M%S)"
 mkdir -p "${BACKUP_DIR}"
 
 # Clean previous deployment folders
-rm -rf "${APP_DIR}/venv"
 rm -rf "${WEB_ROOT}"
 
-# Create and activate Python virtual environment
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip setuptools wheel cython
-check_error "Failed to create Python virtual environment"
-
 # -----------------------------------------------------------
-# VII. BACKEND SETUP
+# VIII. BACKEND SETUP
 # -----------------------------------------------------------
 log "Installing backend dependencies..."
 cd "${BACKEND_DIR}"
