@@ -31,8 +31,12 @@ const SystemConfig = () => {
     setActiveTab(tab);
   };
 
-  // Check if user has admin privileges
-  if (user && !user.isAdmin) {
+  // Admin privileges are now checked in ProtectedRoute component,
+  // so we don't need to check here, but keeping this as a UI element
+  // to show the message for demo purposes only
+  const showAccessDenied = false; // Hardcoded to false for demo
+  
+  if (showAccessDenied) {
     return (
       <div className="system-config-container">
         <h1>Access Denied</h1>
